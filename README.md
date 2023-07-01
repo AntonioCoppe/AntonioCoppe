@@ -1,5 +1,3 @@
-### Hi there 👋
-
 - 🔭 I’m currently working as a ***Game Programmer*** at Vinyl Studios
 - 🌱 I’m currently finishing a ***Bachelor in Computer science*** at [unibz](https://www.unibz.it)
 - 📫 How to reach me: antonio.coppe@gmail.com

@@ -1,133 +1,111 @@
-// Get canvas and popup element references
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const popup = document.getElementById("popup");
-
-// Resize canvas to fill the window
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
-// Define the player (a simple square) and its initial properties
-const player = {
-  x: 50,
-  y: 50,
-  width: 30,
-  height: 30,
-  speed: 5
-};
-
-// Define building objects with x, y, width, height, and a message.
-// You can adjust these values to match your “map” layout.
-const buildings = [
-  {
-    x: 200,
-    y: 100,
-    width: 100,
-    height: 100,
-    message: "At Building A, I developed a scalable backend solution."
-  },
-  {
-    x: 500,
-    y: 300,
-    width: 120,
-    height: 100,
-    message: "At Building B, I led a full-stack integration project."
-  },
-  {
-    x: 800,
-    y: 150,
-    width: 150,
-    height: 120,
-    message: "At Building C, I optimized system performance."
-  }
-];
-
-// Handle keyboard arrow key input for player movement
-const keysPressed = {};
-window.addEventListener("keydown", (e) => {
-  keysPressed[e.key] = true;
-});
-window.addEventListener("keyup", (e) => {
-  keysPressed[e.key] = false;
-});
-
-// Update player's position based on keys pressed
-function updatePlayer() {
-  if (keysPressed["ArrowUp"] || keysPressed["w"]) {
-    player.y -= player.speed;
-  }
-  if (keysPressed["ArrowDown"] || keysPressed["s"]) {
-    player.y += player.speed;
-  }
-  if (keysPressed["ArrowLeft"] || keysPressed["a"]) {
-    player.x -= player.speed;
-  }
-  if (keysPressed["ArrowRight"] || keysPressed["d"]) {
-    player.x += player.speed;
+// Phaser game configuration
+const config = {
+    type: Phaser.AUTO,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: "#222",
+    physics: {
+      default: "arcade",
+      arcade: {
+        gravity: { y: 0 },
+        debug: false,
+      },
+    },
+    scene: {
+      preload: preload,
+      create: create,
+      update: update,
+    }
+  };
+  
+  const game = new Phaser.Game(config);
+  
+  let player;
+  let cursors;
+  let buildings = [];  // Array to store building objects
+  let popupText;       // Text object for popup messages
+  
+  // Preload assets
+  function preload() {
+    // Load a sprite image (using Phaser Labs asset)
+    this.load.image("player", "https://labs.phaser.io/assets/sprites/dude.png");
   }
   
-  // Ensure player stays within canvas boundaries
-  player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-  player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-}
-
-// Check proximity between player and buildings.
-// If close (using a simple collision/intersection threshold), return the building's message.
-function checkProximity() {
-  // Using simple rectangle intersection with a little extra padding
-  const padding = 20;
-  for (let building of buildings) {
-    if (
-      player.x + player.width > building.x - padding &&
-      player.x < building.x + building.width + padding &&
-      player.y + player.height > building.y - padding &&
-      player.y < building.y + building.height + padding
-    ) {
-      return building.message;
+  // Create the game scene
+  function create() {
+    // Create the player sprite and enable arcade physics
+    player = this.physics.add.sprite(100, 100, "player");
+    player.setCollideWorldBounds(true);
+    player.setScale(0.5); // Scale down the sprite to a reasonable size
+  
+    // Setup arrow keys input
+    cursors = this.input.keyboard.createCursorKeys();
+  
+    // Helper function to create a building (as a static physics object)
+    function createBuilding(scene, x, y, width, height, message) {
+      // Draw a rectangle using Phaser's Graphics, then convert it into a texture
+      let graphics = scene.add.graphics();
+      graphics.fillStyle(0x8B4513, 1);
+      graphics.fillRect(0, 0, width, height);
+      // Generate a texture from this graphic
+      let key = `building_${x}_${y}`;
+      graphics.generateTexture(key, width, height);
+      graphics.destroy();
+      
+      // Create an image from the generated texture and position it with center origin
+      let building = scene.physics.add.staticImage(x, y, key);
+      building.setOrigin(0.5, 0.5);
+      building.message = message;
+      buildings.push(building);
+    }
+  
+    // Create several buildings with positions, dimensions, and associated messages
+    createBuilding(this, 400, 300, 150, 100, "At Building A, I developed a scalable backend solution.");
+    createBuilding(this, 700, 500, 120, 100, "At Building B, I led a full-stack integration project.");
+    createBuilding(this, 1000, 250, 150, 120, "At Building C, I optimized system performance.");
+  
+    // Create a popup text object; it will be updated and shown when near a building.
+    popupText = this.add.text(0, 0, "", { font: "16px Arial", fill: "#fff", backgroundColor: "rgba(0,0,0,0.7)", padding: { x: 5, y: 5 }});
+    popupText.setVisible(false);
+  }
+  
+  // Update loop: handle movement and check for proximity to buildings
+  function update() {
+    const speed = 200;
+    player.setVelocity(0);
+  
+    // Move the player based on arrow key input
+    if (cursors.left.isDown) {
+      player.setVelocityX(-speed);
+    } else if (cursors.right.isDown) {
+      player.setVelocityX(speed);
+    }
+    if (cursors.up.isDown) {
+      player.setVelocityY(-speed);
+    } else if (cursors.down.isDown) {
+      player.setVelocityY(speed);
+    }
+  
+    // Check if the player is near any building
+    let threshold = 100;  // Distance threshold (in pixels)
+    let foundMessage = null;
+    for (let building of buildings) {
+      let dx = player.x - building.x;
+      let dy = player.y - building.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < threshold) {
+        foundMessage = building.message;
+        break;  // Show only one building's message at a time
+      }
+    }
+    
+    if (foundMessage) {
+      // Update and display the popup text near the player
+      popupText.setText(foundMessage);
+      popupText.setPosition(player.x + 40, player.y - 20);
+      popupText.setVisible(true);
+    } else {
+      popupText.setVisible(false);
     }
   }
-  return null;
-}
-
-// Draw the map, buildings, and player
-function draw() {
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw buildings
-  buildings.forEach((building) => {
-    ctx.fillStyle = "#8B4513"; // Brown color for buildings
-    ctx.fillRect(building.x, building.y, building.width, building.height);
-    ctx.strokeStyle = "#000";
-    ctx.strokeRect(building.x, building.y, building.width, building.height);
-  });
-
-  // Draw player
-  ctx.fillStyle = "#00f"; // Blue color for player
-  ctx.fillRect(player.x, player.y, player.width, player.height);
-}
-
-// Main game loop
-function gameLoop() {
-  updatePlayer();
-  draw();
   
-  // Check for proximity to a building
-  const message = checkProximity();
-  if (message) {
-    // Position the popup above and to the right of the player
-    popup.style.left = (player.x + player.width + 10) + "px";
-    popup.style.top = (player.y - 10) + "px";
-    popup.innerText = message;
-    popup.classList.remove("hidden");
-  } else {
-    popup.classList.add("hidden");
-  }
-  
-  requestAnimationFrame(gameLoop);
-}
-gameLoop();

@@ -3,20 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Antonio Coppe – Code Quest</title>
+  <title>Antonio Coppe – Interactive Map</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Canvas for an interactive game-like experience -->
+  <!-- The canvas that fills the screen -->
   <canvas id="gameCanvas"></canvas>
 
-  <!-- Simple menu overlay -->
-  <div id="menu">
-    <button id="playButton">Start Game</button>
-    <button id="aboutButton">About Me</button>
-    <button id="resumeButton">My Resume</button>
-    <button id="projectsButton">Projects</button>
-  </div>
+  <!-- Popup element for character speech -->
+  <div id="popup" class="hidden"></div>
 
   <script src="script.js"></script>
 </body>

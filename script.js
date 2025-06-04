@@ -12,18 +12,4 @@ document.addEventListener("DOMContentLoaded", () => {
     opacity: 0,
     ease: "power2.out"
   });
-
-//   // Apply scroll-triggered animations to each section on the page.
-//   document.querySelectorAll("section").forEach((section) => {
-//     gsap.from(section, {
-//       scrollTrigger: {
-//         trigger: section,
-//         start: "top 80%"
-//       },
-//       duration: 1,
-//       y: 30,
-//       opacity: 0,
-//       ease: "power2.out"
-//     });
-//   });
-// });
+});
